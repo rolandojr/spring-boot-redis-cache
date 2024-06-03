@@ -5,14 +5,13 @@ import com.example.springboot.rediscache.repository.UserRepository;
 import com.example.springboot.rediscache.services.UserService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.redisson.api.RList;
-import org.redisson.api.RMap;
-import org.redisson.api.RedissonClient;
+import org.redisson.api.RListReactive;
+import org.redisson.api.RMapReactive;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.TimeUnit;
+import java.time.Duration;
 
 @Slf4j
 @Service
@@ -20,54 +19,39 @@ import java.util.concurrent.TimeUnit;
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
-    private final RedissonClient redissonClient;
-
-    private static final String USER_CACHE = "USER_CACHE";
-    private static final String USER_LIST_CACHE = "USER_LIST_CACHE";
+    private final RListReactive<User> redissonRListReactiveClient;
+    private final RMapReactive<Long, User> redissonRMapReactiveClient;
 
 
     @Override
-    public void save(User user) {
-        User userSaved = userRepository.save(user);
-        log.info("Save user in DB. Name = {} , Email = {}", user.getName(), user.getEmail());
-        redissonClient.getMap(USER_CACHE).put(userSaved.getId(), userSaved);
-        log.info("Save user in Redis. Name = {} , Email = {}", user.getName(), user.getEmail());
+    public Mono<User> save(User user) {
+        return userRepository.save(user)
+                .doOnNext(user1 -> redissonRMapReactiveClient.put(user1.getId(), user1).subscribe());
+
     }
 
     @Override
-    public Optional<User> findById(Long id) {
-        RMap<Long, User> userRMap = redissonClient.getMap(USER_CACHE);
-        log.info("Find user from caché");
-        if (!userRMap.containsKey(id)) {
-            Optional<User> optionalUser = userRepository.findById(id);
-            log.info("Find user from DB");
-            optionalUser.ifPresent(user -> {
-                userRMap.put(id, user);
-                log.info("Save user in cache");
-            });
-            return optionalUser;
-        }
-        return Optional.ofNullable(userRMap.get(id));
+    public Mono<User> findById(Long id) {
+        return redissonRMapReactiveClient.get(id)
+                .doOnNext(user -> log.info("Find user by id {}", user.getId()))
+                .switchIfEmpty(userRepository.findById(id)
+                        .doOnNext(user -> redissonRMapReactiveClient.put(id, user).subscribe()));
     }
 
     @Override
-    public List<User> findAll() {
-        RList<User> userRList = redissonClient.getList(USER_LIST_CACHE);
-        if (userRList.isEmpty()) {
-            List<User> userList = userRepository.findAll();
-            userRList.addAll(userList);
-            userRList.expire(60, TimeUnit.SECONDS);
-            return userList;
-        }
-        return userRList.readAll();
+    public Flux<User> findAll() {
+        return redissonRListReactiveClient.readAll()
+                .flatMapMany(Flux::fromIterable)
+                .switchIfEmpty(userRepository.findAll()
+                        .collectList()
+                        .doOnNext(users -> redissonRListReactiveClient.addAll(users)
+                                .then(redissonRListReactiveClient.expire(Duration.ofSeconds(30))).subscribe())
+                        .flatMapMany(Flux::fromIterable));
     }
 
     @Override
-    public void deleteById(Long id) {
-        userRepository.deleteById(id);
-        log.info("Delete user from DB with id {}", id);
-        redissonClient.getMap(USER_CACHE).remove(id);
-        log.info("Delete user from CACHE with id {}", id);
-
+    public Mono<Void> deleteById(Long id) {
+        return userRepository.deleteById(id)
+                .then(redissonRMapReactiveClient.remove(id).then());
     }
 }
