@@ -1,17 +1,16 @@
 package com.example.springboot.rediscache.services;
 
 import com.example.springboot.rediscache.models.User;
-
-import java.util.List;
-import java.util.Optional;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 public interface UserService {
 
-    void save(User user);
+    Mono<User> save(User user);
 
-    Optional<User> findById(Long id);
+    Mono<User> findById(Long id);
 
-    List<User> findAll();
+    Flux<User> findAll();
 
-    void deleteById(Long id);
+    Mono<Void> deleteById(Long id);
 }
