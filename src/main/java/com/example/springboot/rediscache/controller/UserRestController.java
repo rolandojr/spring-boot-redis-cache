@@ -8,7 +8,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.net.URI;
 
 @Slf4j
@@ -21,7 +20,8 @@ public class UserRestController {
 
     @GetMapping
     public Flux<User> getAllUsers() {
-        return userService.findAll();
+        return userService.findAll()
+                .doFinally(signalType -> log.info("Thread: {}", Thread.currentThread().getName()));
     }
 
     @GetMapping("/{id}")

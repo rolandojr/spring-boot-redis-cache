@@ -26,7 +26,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<User> save(User user) {
         return userRepository.save(user)
-                .doOnNext(user1 -> redissonRMapReactiveClient.put(user1.getId(), user1).subscribe());
+                .doOnNext(user1 -> log.info("User Created: Thread used {}", Thread.currentThread().getName()))
+                .flatMap(user1 -> redissonRMapReactiveClient.put(user1.getId(), user1)
+                        .thenReturn(user1));
 
     }
 
@@ -35,17 +37,20 @@ public class UserServiceImpl implements UserService {
         return redissonRMapReactiveClient.get(id)
                 .doOnNext(user -> log.info("Find user by id {}", user.getId()))
                 .switchIfEmpty(userRepository.findById(id)
-                        .doOnNext(user -> redissonRMapReactiveClient.put(id, user).subscribe()));
+                        .flatMap(user -> redissonRMapReactiveClient.put(id, user)
+                                .thenReturn(user)));
     }
 
     @Override
     public Flux<User> findAll() {
         return redissonRListReactiveClient.readAll()
+                .doOnNext(users -> log.info("Find all users from Redis thread {}", Thread.currentThread().getName()))
                 .flatMapMany(Flux::fromIterable)
                 .switchIfEmpty(userRepository.findAll()
                         .collectList()
-                        .doOnNext(users -> redissonRListReactiveClient.addAll(users)
-                                .then(redissonRListReactiveClient.expire(Duration.ofSeconds(30))).subscribe())
+                        .doOnNext(user -> log.info("Find all users from Database thread {}", Thread.currentThread().getName()))
+                        .flatMap(users -> redissonRListReactiveClient.addAll(users)
+                                .then(redissonRListReactiveClient.expire(Duration.ofSeconds(30))).thenReturn(users))
                         .flatMapMany(Flux::fromIterable));
     }
 
