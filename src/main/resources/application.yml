@@ -1,9 +1,25 @@
 spring:
+  redis:
+    host: rolando.redis.cache.windows.net
+    port: 6380
+    password:
+    ssl: true
+    timeout: 10000
+    connectTimeout: 10000
+    clientName: rolando
   r2dbc:
     url: r2dbc:postgresql://postgres:postgres@localhost:5432/redis_cache
     username: postgres
     password: postgres
 
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info
 logging.level:
   com.example.springboot.rediscache: TRACE
 
