@@ -1,9 +1,21 @@
-spring:
-  r2dbc:
-    url: r2dbc:postgresql://postgres:postgres@localhost:5432/redis_cache
-    username: postgres
-    password: postgres
+server:
+  port: ${PORT:8080}
 
-logging.level:
-  com.example.springboot.rediscache: TRACE
+info:
+  project:
+    name: @project.name@
+    description: @project.description@
+    version: @project.version@
+    artifact-id: @project.artifactId@
+
+spring:
+  application:
+    name: spring-boot-redis-cache
+  cloud:
+    config:
+      name: spring-boot-redis-cache
+  webflux:
+    base-path: /party/customer-profile/v1
+
+
 

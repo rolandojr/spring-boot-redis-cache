@@ -15,12 +15,29 @@ import static com.example.springboot.rediscache.utils.Constants.USER_LIST_CACHE;
 @Configuration
 public class RedissonReactiveConfig {
 
+    private static final String REDIS_PROTOCOL_PREFIX = "redis://";
+    private static final String REDISS_PROTOCOL_PREFIX = "rediss://";
+
     @Bean
-    public RedissonReactiveClient redissonReactiveClient() {
+    public RedissonReactiveClient redissonReactiveClient(RedissonProperties redissonProperties) {
         Config config = new Config();
         config.useSingleServer()
-                .setAddress("redis://localhost:6379");
+                .setAddress(getAddress(redissonProperties))
+                .setPassword(redissonProperties.getPassword())
+                .setClientName(redissonProperties.getClientName())
+                .setTimeout(redissonProperties.getTimeout())
+                .setConnectionPoolSize(50)
+                .setConnectionMinimumIdleSize(10)
+                .setConnectTimeout(redissonProperties.getConnectTimeout());
         return Redisson.create(config).reactive();
+    }
+
+    private String getAddress(RedissonProperties redissonProperties) {
+        return getRedisProtocolPrefix(redissonProperties) + redissonProperties.getHost() + ":" + redissonProperties.getPort();
+    }
+
+    private String getRedisProtocolPrefix(RedissonProperties redissonProperties) {
+        return redissonProperties.isSsl() ? REDISS_PROTOCOL_PREFIX : REDIS_PROTOCOL_PREFIX;
     }
 
     @Bean

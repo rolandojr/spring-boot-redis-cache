@@ -8,12 +8,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
-
 import java.net.URI;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/cache/v1")
+@RequestMapping("/users")
 @AllArgsConstructor
 public class UserRestController {
 
@@ -21,7 +20,8 @@ public class UserRestController {
 
     @GetMapping
     public Flux<User> getAllUsers() {
-        return userService.findAll();
+        return userService.findAll()
+                .doFinally(signalType -> log.info("Thread: {}", Thread.currentThread().getName()));
     }
 
     @GetMapping("/{id}")
@@ -35,7 +35,7 @@ public class UserRestController {
     public Mono<ResponseEntity<Void>> createUser(@RequestBody User user) {
         return userService.save(user)
                 .map(user1 -> ResponseEntity.created(
-                                URI.create("/api/cache/v1/".concat(String.valueOf(user1.getId()))))
+                                URI.create("/party/customer-profile/v1/users/".concat(String.valueOf(user1.getId()))))
                         .build());
     }
 

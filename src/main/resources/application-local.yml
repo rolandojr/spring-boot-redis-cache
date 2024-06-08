@@ -1,0 +1,8 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: spring-boot-redis-cache
+  config:
+    import: optional:configserver:${HOSTNAME_CONFIG_SERVER:http://localhost:8888}
