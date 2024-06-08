@@ -12,7 +12,7 @@ import java.net.URI;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/cache/v1")
+@RequestMapping("/users")
 @AllArgsConstructor
 public class UserRestController {
 
@@ -35,7 +35,7 @@ public class UserRestController {
     public Mono<ResponseEntity<Void>> createUser(@RequestBody User user) {
         return userService.save(user)
                 .map(user1 -> ResponseEntity.created(
-                                URI.create("/api/cache/v1/".concat(String.valueOf(user1.getId()))))
+                                URI.create("/party/customer-profile/v1/users/".concat(String.valueOf(user1.getId()))))
                         .build());
     }
 
