@@ -26,6 +26,8 @@ public class RedissonReactiveConfig {
                 .setPassword(redissonProperties.getPassword())
                 .setClientName(redissonProperties.getClientName())
                 .setTimeout(redissonProperties.getTimeout())
+                .setConnectionPoolSize(50)
+                .setConnectionMinimumIdleSize(10)
                 .setConnectTimeout(redissonProperties.getConnectTimeout());
         return Redisson.create(config).reactive();
     }
