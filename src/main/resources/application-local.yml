@@ -2,7 +2,31 @@ server:
   port: ${PORT:8080}
 
 spring:
+  redis:
+    host: localhost
+    port: 6379
+#    password: ''
+    ssl: false
+    timeout: 10000
+    connectTimeout: 10000
+    clientName: rolando
+  r2dbc:
+    url: r2dbc:postgresql://postgres:postgres@localhost:5432/redis_cache
+    username: postgres
+    password: postgres
   application:
     name: spring-boot-redis-cache
-  config:
-    import: optional:configserver:${HOSTNAME_CONFIG_SERVER:http://localhost:8888}
+  cloud:
+    config:
+      enabled: false
+
+management:
+  endpoint:
+    health:
+      show-details: always
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+
