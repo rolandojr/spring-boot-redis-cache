@@ -2,11 +2,13 @@ package com.example.springboot.rediscache;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.data.r2dbc.repository.config.EnableR2dbcRepositories;
 import org.springframework.web.reactive.config.EnableWebFlux;
 
 @EnableWebFlux
 @EnableR2dbcRepositories
+@EnableScheduling
 @SpringBootApplication
 public class SpringBootRedisCacheApplication {
 

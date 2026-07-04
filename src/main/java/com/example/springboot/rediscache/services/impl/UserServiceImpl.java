@@ -1,5 +1,6 @@
 package com.example.springboot.rediscache.services.impl;
 
+import com.example.springboot.rediscache.configuration.RedisErrorAccumulator;
 import com.example.springboot.rediscache.models.User;
 import com.example.springboot.rediscache.repository.UserRepository;
 import com.example.springboot.rediscache.services.UserService;
@@ -21,6 +22,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final RListReactive<User> redissonRListReactiveClient;
     private final RMapReactive<Long, User> redissonRMapReactiveClient;
+    private final RedisErrorAccumulator redisErrorAccumulator;
 
 
     @Override
@@ -28,6 +30,8 @@ public class UserServiceImpl implements UserService {
         return userRepository.save(user)
                 .doOnNext(user1 -> log.info("User Created: Thread used {}", Thread.currentThread().getName()))
                 .flatMap(user1 -> redissonRMapReactiveClient.put(user1.getId(), user1)
+                        .doOnSuccess(result -> redisErrorAccumulator.reset())
+                        .doOnError(error -> redisErrorAccumulator.increment())
                         .thenReturn(user1));
 
     }
@@ -35,21 +39,29 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<User> findById(Long id) {
         return redissonRMapReactiveClient.get(id)
+                .doOnSuccess(result -> redisErrorAccumulator.reset())
+                .doOnError(error -> redisErrorAccumulator.increment())
                 .doOnNext(user -> log.info("Find user by id {}", user.getId()))
                 .switchIfEmpty(userRepository.findById(id)
                         .flatMap(user -> redissonRMapReactiveClient.put(id, user)
+                                .doOnSuccess(result -> redisErrorAccumulator.reset())
+                                .doOnError(error -> redisErrorAccumulator.increment())
                                 .thenReturn(user)));
     }
 
     @Override
     public Flux<User> findAll() {
         return redissonRListReactiveClient.readAll()
+                .doOnSuccess(result -> redisErrorAccumulator.reset())
+                .doOnError(error -> redisErrorAccumulator.increment())
                 .doOnNext(users -> log.info("Find all users from Redis thread {}", Thread.currentThread().getName()))
                 .flatMapMany(Flux::fromIterable)
                 .switchIfEmpty(userRepository.findAll()
                         .collectList()
                         .doOnNext(user -> log.info("Find all users from Database thread {}", Thread.currentThread().getName()))
                         .flatMap(users -> redissonRListReactiveClient.addAll(users)
+                                .doOnSuccess(result -> redisErrorAccumulator.reset())
+                                .doOnError(error -> redisErrorAccumulator.increment())
                                 .then(redissonRListReactiveClient.expire(Duration.ofSeconds(30))).thenReturn(users))
                         .flatMapMany(Flux::fromIterable));
     }
@@ -57,6 +69,9 @@ public class UserServiceImpl implements UserService {
     @Override
     public Mono<Void> deleteById(Long id) {
         return userRepository.deleteById(id)
-                .then(redissonRMapReactiveClient.remove(id).then());
+                .then(redissonRMapReactiveClient.remove(id)
+                        .doOnSuccess(result -> redisErrorAccumulator.reset())
+                        .doOnError(error -> redisErrorAccumulator.increment())
+                        .then());
     }
 }
