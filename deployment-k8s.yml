@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-boot-redis-cache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: spring-boot-redis-cache
+  template:
+    metadata:
+      labels:
+        app: spring-boot-redis-cache
+    spec:
+      containers:
+        - name: spring-boot-redis-cache
+          image: rolandojavier13/spring-boot-redis-cache:v1.0.0-shutdown
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "256m"

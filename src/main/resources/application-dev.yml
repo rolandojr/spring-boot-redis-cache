@@ -1,0 +1,35 @@
+app:
+  redis:
+    error-threshold: 5
+    reset-interval: 10000
+
+spring:
+  cloud:
+    config:
+      enabled: false
+  redis:
+    host: ruling-monster-142258.upstash.io
+    port: 6379
+    password: gQAAAAAAAiuyAAIgcDE0NzZjMDQ4Zjk0MzA0OGY3YTVmODBmYWI3MGI2MTViZQ
+    ssl: true
+    timeout: 10000
+    connectTimeout: 10000
+    clientName: rolando
+  r2dbc:
+    url: r2dbc:postgresql://ep-flat-feather-atr6azxq.c-9.us-east-1.aws.neon.tech/neondb?sslMode=require
+    username: neondb_owner
+    password: 'endpoint=ep-flat-feather-atr6azxq$npg_CBxF8XWeaSK4'
+
+management:
+  endpoint:
+    health:
+      show-details: always
+      probes:
+        enabled: true
+      group:
+        liveness:
+          include: livenessState, redis_audit
+  endpoints:
+    web:
+      exposure:
+        include: health,info

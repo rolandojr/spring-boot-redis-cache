@@ -12,7 +12,7 @@ RUN mvn clean package -DskipTests -Dmaven.test.skip
 #
 # Package stage
 #
-FROM openjdk:11-jre-slim-buster
+FROM eclipse-temurin:11-jdk
 LABEL authors="Rolando Ramos"
 COPY --from=build /home/app/target/spring-boot-redis-cache-1.0.0-SNAPSHOT.jar app-1.0.0.jar
 ENTRYPOINT ["java","-jar","/app-1.0.0.jar"]
